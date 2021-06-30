@@ -1,6 +1,6 @@
 import { createStore } from "vuex";
 
-import {componentDatas} from '../data.js';
+import { componentDatas } from "../data.js";
 
 //create random id for the component keys
 const uid = function() {
@@ -12,14 +12,19 @@ const uid = function() {
   );
 };
 
-const getArrayTitles = function(arr = [], propName){
-  return arr.reduce((acc, val) => {
+const getArrayTitles = function(arr = [], propName, filter = null) {
+  let array = arr;
+
+  if (filter != null) {
+    array = arr.filter(filter);
+  }
+
+  return array.reduce((acc, val) => {
     acc = acc || [];
     if (!val.locked && !val.used) acc.push(val[propName]);
     return acc;
   }, []);
-}
-
+};
 
 export default createStore({
   state: {
@@ -35,21 +40,22 @@ export default createStore({
     componentsList: [],
   },
   mutations: {
-    updateComponentValue(state, payload) {
+    updateComponentValue(_, payload) {
       payload.component.value = payload.newValue;
-      if(payload.optionId) payload.component.optionId = payload.optionId;
-
-      console.log(state.componentsList);
+      if (payload.optionId) payload.component.optionId = payload.optionId;
+    },
+    updateComponentAmount(_, payload){
+      payload.component.count = payload.count;
+    },
+    updateComponentInput(_, payload){
+      payload.component.input = payload.input;
     },
     addComponent(state, payload) {
       let data = {
         id: uid(),
         title: payload.component.title,
+        value: payload.value,
       };
-
-      if (payload.component.type == "text") data.value = "";
-      else if (payload.component.type == "parent") data.value = [];
-      else if (payload.component.type == "boolean") data.value = false;
 
       if (payload.parent) {
         payload.parent.value.push(data);
@@ -70,7 +76,9 @@ export default createStore({
       } else {
         const usedOptionsArray = state.usedOptions[payload.title];
         usedOptionsArray.push(payload.newValue);
-        state.usedOptions[payload.title] = usedOptionsArray.filter(title => title != payload.oldValue);
+        state.usedOptions[payload.title] = usedOptionsArray.filter(
+          (title) => title != payload.oldValue
+        );
       }
     },
   },
@@ -83,16 +91,45 @@ export default createStore({
           context.commit("updateUsedOptions", {
             title: component.title,
             oldValue: component.value,
-            newValue: payload.value
+            newValue: payload.value,
           });
         }
 
-        let updateData ={
+        let updateData = {
           component: component,
           newValue: payload.value,
-          optionId: payload.optionId
+          optionId: payload.optionId,
         };
+
+        if (payload.count) updateData.count = payload.count;
+
         context.commit("updateComponentValue", updateData);
+      }
+    },
+    updateComponentAmount(context, payload)
+    {
+      const component = context.getters.getComponentById(payload);
+
+      if (component != null) {
+        let updateData = {
+          component: component,
+          count: payload.count
+        };
+
+        context.commit("updateComponentAmount", updateData);
+      }
+    },
+    updateComponentInput(context, payload)
+    {
+      const component = context.getters.getComponentById(payload);
+
+      if (component != null) {
+        let updateData = {
+          component: component,
+          input: payload.input
+        };
+
+        context.commit("updateComponentInput", updateData);
       }
     },
     addComponent(context, payload) {
@@ -102,7 +139,21 @@ export default createStore({
       if (component.parent)
         parent = context.getters.getComponentByTitle(component.parent);
 
-      context.commit("addComponent", { component, parent });
+      let value = null;
+
+      if (component.type == "text") value = "";
+      else if (component.type == "parent") value = [];
+      else if (component.type == "boolean") value = false;
+      else if (component.type == "select") {
+        value = context.getters.getComponentOptions(component.title)[0];
+        context.commit("updateUsedOptions", {
+          title: component.title,
+          oldValue: null,
+          newValue: value,
+        });
+      }
+
+      context.commit("addComponent", { component, parent, value });
 
       if (!component.multiple)
         context.commit("setComponentAsUsed", { component });
@@ -117,6 +168,14 @@ export default createStore({
     },
   },
   getters: {
+    getJSONdata(state) {
+      return state.componentsList.reduce((acc, val) => {
+        acc = acc || {};
+        acc[val["title"]] = val["value"];
+        //if (!val.locked && !val.used) acc.push(val[propName]);
+        return acc;
+      }, {});
+    },
     getComponents(state) {
       return state.componentsList;
     },
@@ -142,19 +201,26 @@ export default createStore({
     getComponentData: (state) => (title) => {
       return state.componentDatas.find((comp) => comp.title == title);
     },
-    getComponentTitles(state) {
-      return getArrayTitles(state.componentDatas, 'title');
+    getBaseComponentTitles(state) {
+      return getArrayTitles(
+        state.componentDatas,
+        "title",
+        (comp) => comp.parent == null
+      );
     },
     getOptionDataId: (state) => (title) => {
-      const options = state.componentDatas.find((comp) => comp.title == title).options;
-      options.find(op => op.tit)
+      const options = state.componentDatas.find((comp) => comp.title == title)
+        .options;
+      options.find((op) => op.tit);
     },
     getComponentOptions: (state) => (title) => {
-      const component = state.componentDatas.find((comp) => comp.title == title);
-      const allOptions =  getArrayTitles(component.options, 'name');
+      const component = state.componentDatas.find(
+        (comp) => comp.title == title
+      );
+      const allOptions = getArrayTitles(component.options, "name");
       const usedOptions = state.usedOptions[title];
-      if(usedOptions == null) return allOptions;
-      return allOptions.filter(option => !usedOptions.includes(option));
+      if (usedOptions == null) return allOptions;
+      return allOptions.filter((option) => !usedOptions.includes(option));
     },
     getRelatedComponents: (state) => (title) => {
       return state.componentDatas.filter((comp) => comp.parent == title);

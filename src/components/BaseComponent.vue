@@ -5,39 +5,20 @@
         <span class="title">{{ title }}</span>
         <span v-if="!hasChild">: {{ value }}</span>
       </div>
-      <div>
+      <div class="flex-container">
         <input
           v-if="componentData.type == 'text'"
           type="text"
-          v-model="newVal"
           @input="changeValue"
         />
-        <select
-          v-else-if="componentData.type == 'boolean'"
-          v-model="newVal"
-          @blur="changeValue"
-        >
-          <option value="true">true</option>
-          <option value="false">false</option>
-        </select>
-        <select
+        <boolean-select v-else-if="componentData.type == 'boolean'" />
+        <select-component
           v-else-if="componentData.type == 'select'"
-          v-model="newVal"
-          @change="changeValue"
-        >
-          <option
-            v-for="option in unusedOptions"
-            :key="option"
-            :value="option"
-            >{{ option }}</option
-          >
-        </select>
-        <button
-          v-else-if="componentData.type == 'parent'"
-          @click="addSubComponent"
-        >
-          Add
-        </button>
+          :haveAmount="componentData.amount"
+          :haveInput="componentData.input"
+          :allOptions="componentData.options"
+        />
+        <add-button v-else-if="componentData.add != null && childHasOptions" />
       </div>
     </div>
 
@@ -58,7 +39,16 @@
 <script>
 //import { ref } from 'vue'
 
+import SelectComponent from "./SelectComponent.vue";
+import AddButton from "./AddButton.vue";
+import BooleanSelect from "./BooleanSelect.vue";
+
 export default {
+  components: {
+    SelectComponent,
+    AddButton,
+    BooleanSelect,
+  },
   props: {
     id: { type: String, required: true },
     title: {
@@ -74,9 +64,13 @@ export default {
       default: null,
     },
   },
-  data() {
+  provide() {
     return {
-      newVal: this.value,
+      id: this.id,
+      componentTitle: this.title,
+      changeValue: this.changeValue,
+      addSubComponent: this.addSubComponent,
+      parentName: this.parentName
     };
   },
   computed: {
@@ -86,8 +80,11 @@ export default {
     componentData() {
       return this.$store.getters.getComponentData(this.title);
     },
-    unusedOptions() {
-      return this.$store.getters.getComponentOptions(this.title);
+    childHasOptions() {
+      return (
+        this.$store.getters.getComponentOptions(this.componentData.add).length >
+        0
+      );
     },
     className() {
       let className = "list-item";
@@ -104,11 +101,6 @@ export default {
         parent: this.parentName,
       };
 
-      if (this.componentData.type == "select"){
-          data.usedOption = true;
-          data.optionId = this.componentData.options.find(option => option.name == event.target.value).optionId;
-      }
-      
       this.$store.dispatch("updateComponentValue", data);
     },
     addSubComponent() {
@@ -125,11 +117,7 @@ export default {
   font-weight: bold;
 }
 
-.heading {
-}
-
 .list-item {
-  width: 70vw;
   margin-bottom: 0.5rem;
   padding: 0.3rem;
   padding-left: 0.3rem;
@@ -142,10 +130,5 @@ export default {
   padding: 0.3rem;
   padding-left: 0.3rem;
   border-bottom: 1px dashed red;
-}
-
-.flex-container {
-  display: flex;
-  justify-content: space-between;
 }
 </style>
