@@ -21,7 +21,7 @@ const getArrayTitles = function(arr = [], propName, filter = null) {
 
   return array.reduce((acc, val) => {
     acc = acc || [];
-    if (!val.locked && !val.used) acc.push(val[propName]);
+    if (!val.locked) acc.push(val[propName]);
     return acc;
   }, []);
 };
@@ -63,8 +63,13 @@ export default createStore({
         state.componentsList.push(data);
       }
     },
-    setComponentAsUsed(_, payload) {
-      payload.component.used = true;
+    setComponentAsUsed(state, payload) {
+      if (!state.usedComponents.includes(payload.title)) {
+        state.usedComponents.push(payload.title);
+      }
+    },
+    setComponentAsUnused(state, payload){
+      state.usedComponents = state.usedComponents.filter(comp=> comp != payload.title);
     },
     unlockComponent(_, payload) {
       payload.component.locked = false;
@@ -81,11 +86,13 @@ export default createStore({
         );
       }
     },
+    deleteComponent(state, payload){
+      state.componentsList = state.componentsList.filter(comp => comp != payload);
+    }
   },
   actions: {
     updateComponentValue(context, payload) {
       const component = context.getters.getComponentById(payload);
-
       if (component != null) {
         if (payload.usedOption) {
           context.commit("updateUsedOptions", {
@@ -156,7 +163,7 @@ export default createStore({
       context.commit("addComponent", { component, parent, value });
 
       if (!component.multiple)
-        context.commit("setComponentAsUsed", { component });
+        context.commit("setComponentAsUsed", { title:payload.title });
 
       const relatedComponents = context.getters.getRelatedComponents(
         payload.title
@@ -166,6 +173,12 @@ export default createStore({
         if (comp.locked) context.commit("unlockComponent", { component: comp });
       }
     },
+    deleteComponent(context, payload){
+      const component = context.getters.getComponentById(payload);
+      context.commit("deleteComponent", component);
+
+      context.commit("setComponentAsUnused", { title:component.title });
+    }
   },
   getters: {
     getJSONdata(state) {
@@ -201,12 +214,14 @@ export default createStore({
     getComponentData: (state) => (title) => {
       return state.componentDatas.find((comp) => comp.title == title);
     },
-    getBaseComponentTitles(state) {
-      return getArrayTitles(
+    getUnusedParentComponentTitles(state) {
+      const allTitles = getArrayTitles(
         state.componentDatas,
         "title",
         (comp) => comp.parent == null
       );
+
+      return allTitles.filter((title) => !state.usedComponents.includes(title));
     },
     getOptionDataId: (state) => (title) => {
       const options = state.componentDatas.find((comp) => comp.title == title)

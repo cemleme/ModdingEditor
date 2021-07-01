@@ -20,6 +20,7 @@
         />
         <add-button v-else-if="componentData.add != null && childHasOptions" />
       </div>
+      <button @click="deleteComponent">Del</button>
     </div>
 
     <ul v-if="hasChild">
@@ -70,7 +71,7 @@ export default {
       componentTitle: this.title,
       changeValue: this.changeValue,
       addSubComponent: this.addSubComponent,
-      parentName: this.parentName
+      parentName: this.parentName,
     };
   },
   computed: {
@@ -108,6 +109,14 @@ export default {
       if (subItemTitle == null) return;
       this.$store.dispatch("addComponent", { title: subItemTitle });
     },
+    deleteComponent() {
+      const data = {
+        id: this.id,
+        parent: this.parentName,
+      };
+
+      this.$store.dispatch("deleteComponent", data);
+    },
   },
 };
 </script>
@@ -125,7 +134,7 @@ export default {
 }
 
 .list-item-sub {
-  width: 50vw;
+  width: 40vw;
   margin-bottom: 0.5rem;
   padding: 0.3rem;
   padding-left: 0.3rem;

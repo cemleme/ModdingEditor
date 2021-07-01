@@ -3,7 +3,7 @@
     <div class="flex-div component-editor">
       <select ref="component-select">
         <option
-          v-for="component in componentTitles"
+          v-for="component in unusedComponentTitles"
           :key="component"
           :value="component"
           >{{ component }}</option
@@ -21,7 +21,8 @@
         />
       </ul>
     </div>
-    <div class="flex-div json-output" v-html="jsonData"></div>
+    <div class="flex-div json-output">{{jsonData}}</div>
+    <div class="flex-div json-output">{{components}}</div>
   </div>
 </template>
 
@@ -29,13 +30,13 @@
 export default {
   computed: {
     jsonData(){
-      return JSON.stringify(this.$store.getters.getJSONdata, null, 4);
+      return '['+JSON.stringify(this.$store.getters.getJSONdata, null, 4)+']';
     },
     components() {
       return this.$store.getters.getComponents;
     },
-    componentTitles() {
-      return this.$store.getters.getBaseComponentTitles;
+    unusedComponentTitles() {
+      return this.$store.getters.getUnusedParentComponentTitles;
     },
   },
   methods: {
@@ -74,5 +75,6 @@ ul {
 
 .flex-div {
   margin: 1rem;
+  width: 40vw;
 }
 </style>

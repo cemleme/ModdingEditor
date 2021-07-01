@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex-container">
     <div v-show="unusedOptions.length > 0">
       <select ref="selectComp" @change="updateData">
         <option hidden value selected> -- change value -- </option>
@@ -73,3 +73,10 @@ export default {
   },
 };
 </script>
+
+
+<style scoped>
+input[type="number"]{
+  width:30px;
+}
+</style>
