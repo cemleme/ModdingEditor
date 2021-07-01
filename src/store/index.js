@@ -1,5 +1,4 @@
 import { createStore } from "vuex";
-
 import { componentDatas } from "../data.js";
 
 //create random id for the component keys
@@ -80,14 +79,20 @@ export default createStore({
         state.usedOptions[payload.title] = arr;
       } else {
         const usedOptionsArray = state.usedOptions[payload.title];
-        usedOptionsArray.push(payload.newValue);
+        if(payload.newValue != null) usedOptionsArray.push(payload.newValue);
         state.usedOptions[payload.title] = usedOptionsArray.filter(
           (title) => title != payload.oldValue
         );
       }
     },
+    deleteUsedOptionTitle(state, payload){
+      state.usedOptions[payload.title] = null;
+    },
     deleteComponent(state, payload){
       state.componentsList = state.componentsList.filter(comp => comp != payload);
+    },
+    deleteChildComponent(state,payload){
+      payload.parent.value = payload.parent.value.filter(comp => comp != payload.component);
     }
   },
   actions: {
@@ -175,9 +180,29 @@ export default createStore({
     },
     deleteComponent(context, payload){
       const component = context.getters.getComponentById(payload);
-      context.commit("deleteComponent", component);
 
-      context.commit("setComponentAsUnused", { title:component.title });
+      if(payload.parent == null)
+      {
+        context.commit("setComponentAsUnused", { title:component.title });
+        
+        if(Array.isArray(component.value) && component.value.length > 0)
+        {
+          context.commit("deleteUsedOptionTitle", {
+            title: component.value[0].title,
+          });
+        }
+
+        context.commit("deleteComponent", component);
+      }
+      else {
+        const parent = context.getters.getComponentByTitle(payload.parent);
+        context.commit("updateUsedOptions", {
+          title: component.title,
+          oldValue: component.value,
+          newValue: null,
+        });
+        context.commit("deleteChildComponent", {component, parent});
+      }
     }
   },
   getters: {
@@ -204,6 +229,10 @@ export default createStore({
         ).value;
         return parent.find((comp) => comp.id == id);
       }
+    },
+    getParentComponent: (state) => (title) =>  {
+      const parentTitle = state.componentDatas.find((comp) => comp.title == title).parent;
+      return state.componentsList.find((comp) => comp.title == parentTitle);
     },
     getComponentByTitle: (state) => (title) => {
       return state.componentsList.find((comp) => comp.title == title);

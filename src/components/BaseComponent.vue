@@ -115,6 +115,8 @@ export default {
         parent: this.parentName,
       };
 
+      console.log(data);
+
       this.$store.dispatch("deleteComponent", data);
     },
   },
