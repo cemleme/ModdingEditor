@@ -1,8 +1,8 @@
 <template>
-  <div class="flex-container">
+  <div class="row">
     <div v-show="unusedOptions.length > 0">
       <select ref="selectComp" @change="updateData">
-        <option hidden value selected> -- change value -- </option>
+        <option hidden value selected> -- change {{componentTitle}} -- </option>
         <option v-for="option in unusedOptions" :key="option" :value="option">{{
           option
         }}</option>
@@ -15,8 +15,10 @@
       ref="amount"
       value="1"
       @input="updateAmount"
+      class="q-ml-sm"
     />
-    <input v-if="haveInput" type="text" value="" @input="updateInput" />
+    <input v-if="haveInput" type="text" value="" @input="updateInput" 
+      class="q-ml-sm" />
   </div>
 </template>
 

@@ -22,33 +22,39 @@ const variables = [
 
 export const componentDatas = [
   {
+    tooltip: "Shows on the modding list to select among other mods",
     icon: "title",
     type: "text",
     title: "Mod Title",
   },
   {
+    tooltip: "(optional) To remember who created to modding",
     icon: "person",
     type: "text",
     title: "Author",
   },
   {
+    tooltip: "Select if you want to switch/reload scene after the modding",
     icon: "tv",
     type: "select",
     title: "Scene",
     options: scenes,
   },
   {
+    tooltip: "Clears current inventory",
     icon: "reset_tv",
     type: "boolean",
     title: "Reset Inventory",
   },
   {
+    tooltip: "Selected items will be added to the current inventory",
     icon: "inventory_2",
     type: "parent",
     title: "Inventory Items",
     add: "Item",
   },
   {
+    tooltip: "The amount of item is ignored if it can't be carried multiple",
     icon: "category",
     type: "select",
     title: "Item",
@@ -59,6 +65,7 @@ export const componentDatas = [
     locked: true,
   },
   {
+    tooltip: "Selected objective will be set as complete",
     icon: "receipt_long",
     type: "parent",
     title: "Objectives",
@@ -74,6 +81,7 @@ export const componentDatas = [
     locked: true,
   },
   {
+    tooltip: "Sets selected global variables, other variables remain unchanged",
     icon: "tune",
     type: "parent",
     title: "Variables",

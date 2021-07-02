@@ -1,6 +1,8 @@
 import { createStore } from "vuex";
 import { componentDatas } from "../data.js";
 
+import confirm from "./confirm";
+
 //create random id for the component keys
 const uid = function() {
   return (
@@ -26,6 +28,9 @@ const getArrayTitles = function(arr = [], propName, filter = null) {
 };
 
 export default createStore({
+  modules: {
+    confirm
+  },
   state: {
     componentDatas: componentDatas,
     usedOptions: {},
@@ -55,6 +60,8 @@ export default createStore({
         title: payload.component.title,
         value: payload.value,
       };
+
+      if (payload.optionId) data.optionId = payload.optionId;
 
       if (payload.parent) {
         payload.parent.value.push(data);
@@ -152,12 +159,14 @@ export default createStore({
         parent = context.getters.getComponentByTitle(component.parent);
 
       let value = null;
+      let optionId = null;
 
       if (component.type == "text") value = "";
       else if (component.type == "parent") value = [];
       else if (component.type == "boolean") value = false;
       else if (component.type == "select") {
         value = context.getters.getComponentOptions(component.title)[0];
+        optionId = component.options[0].optionId;
         context.commit("updateUsedOptions", {
           title: component.title,
           oldValue: null,
@@ -165,7 +174,7 @@ export default createStore({
         });
       }
 
-      context.commit("addComponent", { component, parent, value });
+      context.commit("addComponent", { component, parent, value, optionId });
 
       if (!component.multiple)
         context.commit("setComponentAsUsed", { title:payload.title });
@@ -209,8 +218,20 @@ export default createStore({
     getJSONdata(state) {
       return state.componentsList.reduce((acc, val) => {
         acc = acc || {};
-        acc[val["title"]] = val["value"];
-        //if (!val.locked && !val.used) acc.push(val[propName]);
+
+        if(Array.isArray(val["value"]))
+        {
+          acc[val["title"]] = [];
+          for(const item of val["value"]){
+            let obj = {...item};
+            delete obj.id;
+            acc[val["title"]].push(obj);
+          }
+        }
+        else{
+          acc[val["title"]] = val["value"];
+        }
+        
         return acc;
       }, {});
     },
@@ -268,6 +289,6 @@ export default createStore({
     },
     getRelatedComponents: (state) => (title) => {
       return state.componentDatas.filter((comp) => comp.parent == title);
-    },
+    }
   },
 });

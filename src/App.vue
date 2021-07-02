@@ -1,18 +1,19 @@
 <template>
   <div class="row">
-    <div class="col-8">
-      <q-list bordered class="rounded-borders" style="max-width: 600px">
-        <q-item-label header>
-          <select ref="component-select">
-            <option
-              v-for="component in unusedComponentTitles"
-              :key="component"
-              :value="component"
-              >{{ component }}</option
-            >
-          </select>
-          <button @click="addComponent">add</button>
-        </q-item-label>
+    <div class="col-sm-7 col-xs-12 q-mr-md">
+      <q-list bordered class="rounded-borders">
+        <q-select
+          filled
+          bottom-slots
+          v-model="componentTitle"
+          :options="unusedComponentTitles"
+          label="Select Component to Add:"
+          :hide-bottom-space="true"
+        >
+          <template v-slot:after>
+            <q-btn round dense flat icon="library_add" @click="addComponent" />
+          </template>
+        </q-select>
 
         <q-separator spaced />
 
@@ -27,7 +28,7 @@
       </q-list>
     </div>
 
-    <div class="col-4">
+    <div class="col-sm-4 col-xs-12">
       <q-card flat bordered class="my-card bg-grey-1">
         <q-card-section>
           <div class="row items-center no-wrap">
@@ -60,10 +61,15 @@
       <div class="json-output">{{ components }}</div>
     </div>
   </div>
+
+    <confirm-modal />
 </template>
 
 <script>
+import ConfirmModal from "./components/ConfirmModal.vue";
+
 export default {
+  components: {ConfirmModal},
   computed: {
     jsonData() {
       return (
@@ -77,15 +83,23 @@ export default {
       return this.$store.getters.getUnusedParentComponentTitles;
     },
   },
+  data() {
+    return {
+      componentTitle: null,
+    };
+  },
   methods: {
     addComponent() {
+      if (this.componentTitle == null) return;
+
       this.$store.dispatch("addComponent", {
-        title: this.$refs["component-select"].value,
+        title: this.componentTitle,
       });
+      this.componentTitle = null;
     },
     GetComponentName(type) {
       return this.$store.getters.GetComponentName(type);
-    },
+    }
   },
 };
 </script>

@@ -1,7 +1,11 @@
 <template>
   <q-item>
     <q-item-section avatar top style="min-width: 20px;">
-          <q-icon color="primary" :name="componentData.icon " @click="toggleChilds" />
+      <q-icon
+        color="primary"
+        :name="componentData.icon"
+        @click="toggleChilds"
+      />
     </q-item-section>
 
     <q-item-section top>
@@ -9,32 +13,34 @@
         <span class="text-weight-medium">{{ title }}</span>
         <span v-if="!hasChild" class="text-grey-8">: {{ value }}</span>
       </q-item-label>
-      <q-item-label
-        lines="1"
-        class="q-mt-xs text-body2 text-weight-bold text-primary text-uppercase"
-      >
-        <div class="flex-container">
-          <input
-            v-if="componentData.type == 'text'"
-            type="text"
-            @input="changeValue"
-          />
-          <boolean-select v-else-if="componentData.type == 'boolean'" />
-          <select-component
-            v-else-if="componentData.type == 'select'"
-            :haveAmount="componentData.amount"
-            :haveInput="componentData.input"
-            :allOptions="componentData.options"
-          />
-          <add-button
-            v-else-if="componentData.add != null && childHasOptions"
-          />
-        </div>
+      <q-item-label lines="1" class="row">
+        <input
+          v-if="componentData.type == 'text'"
+          type="text"
+          @input="changeValue"
+        />
+        <boolean-select v-else-if="componentData.type == 'boolean'" />
+        <select-component
+          v-else-if="componentData.type == 'select'"
+          :haveAmount="componentData.amount"
+          :haveInput="componentData.input"
+          :allOptions="componentData.options"
+        />
       </q-item-label>
     </q-item-section>
 
     <q-item-section top side>
       <div class="text-grey-8 q-gutter-xs">
+        <q-btn
+          v-if="componentData.add != null && childHasOptions"
+          class="gt-xs"
+          size="12px"
+          flat
+          dense
+          round
+          icon="add_circle_outline"
+          @click="addSubComponent"
+        />
         <q-btn
           v-if="hasChild && showChilds"
           class="gt-xs"
@@ -55,6 +61,11 @@
           icon="expand_more"
           @click="toggleChilds"
         />
+        <q-btn v-if="componentData.tooltip" class="gt-xs" size="12px" flat dense round icon="help">
+          <q-tooltip>
+            {{componentData.tooltip}}
+          </q-tooltip>
+        </q-btn>
         <q-btn
           class="gt-xs"
           size="12px"
@@ -62,7 +73,7 @@
           dense
           round
           icon="delete"
-          @click="deleteComponent"
+          @click="deleteConfirm"
         />
       </div>
     </q-item-section>
@@ -70,9 +81,8 @@
 
   <q-list
     v-if="hasChild && showChilds"
-    bordered
     class="rounded-borders"
-    style="max-width: 600px; margin-left:70px;"
+    style="margin-left:70px;"
   >
     <base-component
       v-for="comp in value"
@@ -85,20 +95,18 @@
     />
   </q-list>
 
-  <q-separator inset="item" style="margin-left: 55px;"/>
+  <q-separator inset="item" style="margin-left: 55px;" />
 </template>
 
 <script>
 //import { ref } from 'vue'
 
 import SelectComponent from "./SelectComponent.vue";
-import AddButton from "./AddButton.vue";
 import BooleanSelect from "./BooleanSelect.vue";
 
 export default {
   components: {
     SelectComponent,
-    AddButton,
     BooleanSelect,
   },
   props: {
@@ -165,15 +173,14 @@ export default {
       if (subItemTitle == null) return;
       this.$store.dispatch("addComponent", { title: subItemTitle });
     },
-    deleteComponent() {
+    deleteConfirm(){
       const data = {
         id: this.id,
         parent: this.parentName,
+        title: this.title
       };
 
-      console.log(data);
-
-      this.$store.dispatch("deleteComponent", data);
+      this.$store.dispatch("confirm/askDelete",data );
     },
     toggleChilds() {
       this.showChilds = !this.showChilds;
