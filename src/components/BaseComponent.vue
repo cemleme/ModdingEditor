@@ -1,40 +1,91 @@
 <template>
-  <li>
-    <div class="flex-container" :class="className">
-      <div>
-        <span class="title">{{ title }}</span>
-        <span v-if="!hasChild">: {{ value }}</span>
-      </div>
-      <div class="flex-container">
-        <input
-          v-if="componentData.type == 'text'"
-          type="text"
-          @input="changeValue"
-        />
-        <boolean-select v-else-if="componentData.type == 'boolean'" />
-        <select-component
-          v-else-if="componentData.type == 'select'"
-          :haveAmount="componentData.amount"
-          :haveInput="componentData.input"
-          :allOptions="componentData.options"
-        />
-        <add-button v-else-if="componentData.add != null && childHasOptions" />
-      </div>
-      <button @click="deleteComponent">Del</button>
-    </div>
+  <q-item>
+    <q-item-section avatar top style="min-width: 20px;">
+          <q-icon color="primary" :name="componentData.icon " @click="toggleChilds" />
+    </q-item-section>
 
-    <ul v-if="hasChild">
-      <base-component
-        v-for="comp in value"
-        :key="comp.id"
-        :id="comp.id"
-        :title="comp.title"
-        :value="comp.value"
-        :parentName="title"
-        :isHeading="false"
-      />
-    </ul>
-  </li>
+    <q-item-section top>
+      <q-item-label lines="1">
+        <span class="text-weight-medium">{{ title }}</span>
+        <span v-if="!hasChild" class="text-grey-8">: {{ value }}</span>
+      </q-item-label>
+      <q-item-label
+        lines="1"
+        class="q-mt-xs text-body2 text-weight-bold text-primary text-uppercase"
+      >
+        <div class="flex-container">
+          <input
+            v-if="componentData.type == 'text'"
+            type="text"
+            @input="changeValue"
+          />
+          <boolean-select v-else-if="componentData.type == 'boolean'" />
+          <select-component
+            v-else-if="componentData.type == 'select'"
+            :haveAmount="componentData.amount"
+            :haveInput="componentData.input"
+            :allOptions="componentData.options"
+          />
+          <add-button
+            v-else-if="componentData.add != null && childHasOptions"
+          />
+        </div>
+      </q-item-label>
+    </q-item-section>
+
+    <q-item-section top side>
+      <div class="text-grey-8 q-gutter-xs">
+        <q-btn
+          v-if="hasChild && showChilds"
+          class="gt-xs"
+          size="12px"
+          flat
+          dense
+          round
+          icon="expand_less"
+          @click="toggleChilds"
+        />
+        <q-btn
+          v-if="hasChild && !showChilds"
+          class="gt-xs"
+          size="12px"
+          flat
+          dense
+          round
+          icon="expand_more"
+          @click="toggleChilds"
+        />
+        <q-btn
+          class="gt-xs"
+          size="12px"
+          flat
+          dense
+          round
+          icon="delete"
+          @click="deleteComponent"
+        />
+      </div>
+    </q-item-section>
+  </q-item>
+
+  <q-list
+    v-if="hasChild && showChilds"
+    bordered
+    class="rounded-borders"
+    style="max-width: 600px; margin-left:70px;"
+  >
+    <base-component
+      v-for="comp in value"
+      :key="comp.id"
+      :id="comp.id"
+      :title="comp.title"
+      :value="comp.value"
+      :parentName="title"
+      :isHeading="false"
+    />
+  </q-list>
+
+  <q-separator inset="item" style="margin-left: 55px;"/>
 </template>
 
 <script>
@@ -65,6 +116,11 @@ export default {
       default: null,
     },
   },
+  data() {
+    return {
+      showChilds: true,
+    };
+  },
   provide() {
     return {
       id: this.id,
@@ -76,7 +132,7 @@ export default {
   },
   computed: {
     hasChild() {
-      return Array.isArray(this.value);
+      return Array.isArray(this.value) && this.value.length > 0;
     },
     componentData() {
       return this.$store.getters.getComponentData(this.title);
@@ -118,6 +174,9 @@ export default {
       console.log(data);
 
       this.$store.dispatch("deleteComponent", data);
+    },
+    toggleChilds() {
+      this.showChilds = !this.showChilds;
     },
   },
 };

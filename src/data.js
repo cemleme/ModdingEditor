@@ -22,28 +22,34 @@ const variables = [
 
 export const componentDatas = [
   {
+    icon: "title",
     type: "text",
     title: "Mod Title",
   },
   {
+    icon: "person",
     type: "text",
     title: "Author",
   },
   {
+    icon: "tv",
     type: "select",
     title: "Scene",
     options: scenes,
   },
   {
+    icon: "reset_tv",
     type: "boolean",
     title: "Reset Inventory",
   },
   {
+    icon: "inventory_2",
     type: "parent",
     title: "Inventory Items",
     add: "Item",
   },
   {
+    icon: "category",
     type: "select",
     title: "Item",
     parent: "Inventory Items",
@@ -53,11 +59,13 @@ export const componentDatas = [
     locked: true,
   },
   {
+    icon: "receipt_long",
     type: "parent",
     title: "Objectives",
     add: "Objective",
   },
   {
+    icon: "task",
     type: "select",
     title: "Objective",
     parent: "Objectives",
@@ -66,11 +74,13 @@ export const componentDatas = [
     locked: true,
   },
   {
+    icon: "tune",
     type: "parent",
     title: "Variables",
     add: "Variable",
   },
   {
+    icon: "settings",
     type: "select",
     title: "Variable",
     parent: "Variables",

@@ -1,16 +1,21 @@
 <template>
-  <div class="flex-container">
-    <div class="flex-div component-editor">
-      <select ref="component-select">
-        <option
-          v-for="component in unusedComponentTitles"
-          :key="component"
-          :value="component"
-          >{{ component }}</option
-        >
-      </select>
-      <button @click="addComponent">add</button>
-      <ul>
+  <div class="row">
+    <div class="col-8">
+      <q-list bordered class="rounded-borders" style="max-width: 600px">
+        <q-item-label header>
+          <select ref="component-select">
+            <option
+              v-for="component in unusedComponentTitles"
+              :key="component"
+              :value="component"
+              >{{ component }}</option
+            >
+          </select>
+          <button @click="addComponent">add</button>
+        </q-item-label>
+
+        <q-separator spaced />
+
         <base-component
           v-for="comp in components"
           :key="comp.id"
@@ -19,18 +24,51 @@
           :value="comp.value"
           :isHeading="true"
         />
-      </ul>
+      </q-list>
     </div>
-    <div class="flex-div json-output">{{jsonData}}</div>
-    <div class="flex-div json-output">{{components}}</div>
+
+    <div class="col-4">
+      <q-card flat bordered class="my-card bg-grey-1">
+        <q-card-section>
+          <div class="row items-center no-wrap">
+            <div class="col">
+              <div class="text-h6">Output:</div>
+            </div>
+
+            <div class="col-auto">
+              <q-btn color="grey-7" round flat icon="more_vert">
+                <q-menu cover auto-close>
+                  <q-list>
+                    <q-item clickable>
+                      <q-item-section>Copy</q-item-section>
+                    </q-item>
+                    <q-item clickable>
+                      <q-item-section>Save File</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-section>
+          {{ jsonData }}
+        </q-card-section>
+      </q-card>
+
+      <div class="json-output">{{ components }}</div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   computed: {
-    jsonData(){
-      return '['+JSON.stringify(this.$store.getters.getJSONdata, null, 4)+']';
+    jsonData() {
+      return (
+        "[" + JSON.stringify(this.$store.getters.getJSONdata, null, 4) + "]"
+      );
     },
     components() {
       return this.$store.getters.getComponents;
@@ -59,22 +97,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: left;
   color: #2c3e50;
-  margin-top: 60px;
-  margin-left: 20px;
-}
-
-ul {
-  list-style: none;
-  padding-inline-start: 1rem;
-}
-
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-}
-
-.flex-div {
-  margin: 1rem;
-  width: 40vw;
+  margin: 30px;
 }
 </style>
