@@ -2,20 +2,28 @@
   <div class="row">
     <div class="col-sm-7 col-xs-12 q-mr-md">
       <q-list bordered class="rounded-borders">
-        <q-select
-          filled
-          bottom-slots
-          v-model="componentTitle"
-          :options="unusedComponentTitles"
-          label="Select Component to Add:"
-          :hide-bottom-space="true"
-        >
-          <template v-slot:after>
-            <q-btn round dense flat icon="library_add" @click="addComponent" />
-          </template>
-        </q-select>
+        <div v-if="unusedComponentTitles.length">
+          <q-select
+            filled
+            bottom-slots
+            v-model="componentTitle"
+            :options="unusedComponentTitles"
+            label="Select Component to Add:"
+            :hide-bottom-space="true"
+          >
+            <template v-slot:after>
+              <q-btn
+                round
+                dense
+                flat
+                icon="library_add"
+                @click="addComponent"
+              />
+            </template>
+          </q-select>
 
-        <q-separator spaced />
+          <q-separator spaced />
+        </div>
 
         <base-component
           v-for="comp in components"
@@ -41,10 +49,10 @@
                 <q-menu cover auto-close>
                   <q-list>
                     <q-item clickable>
-                      <q-item-section>Copy</q-item-section>
+                      <q-item-section @click="copyJSON">Copy</q-item-section>
                     </q-item>
                     <q-item clickable>
-                      <q-item-section>Save File</q-item-section>
+                      <q-item-section @click="saveJSON">Save File</q-item-section>
                     </q-item>
                   </q-list>
                 </q-menu>
@@ -57,24 +65,21 @@
           {{ jsonData }}
         </q-card-section>
       </q-card>
-
-      <div class="json-output">{{ components }}</div>
+<!-- 
+      <div class="json-output">{{ components }}</div> -->
     </div>
   </div>
 
-    <confirm-modal />
 </template>
 
 <script>
-import ConfirmModal from "./components/ConfirmModal.vue";
+
+import { copyToClipboard, exportFile } from 'quasar'
 
 export default {
-  components: {ConfirmModal},
   computed: {
     jsonData() {
-      return (
-        "[" + JSON.stringify(this.$store.getters.getJSONdata, null, 4) + "]"
-      );
+      return JSON.stringify(this.$store.getters['output/getJSONdata'], null, 4);
     },
     components() {
       return this.$store.getters.getComponents;
@@ -99,6 +104,12 @@ export default {
     },
     GetComponentName(type) {
       return this.$store.getters.GetComponentName(type);
+    },
+    copyJSON(){
+      copyToClipboard(this.jsonData);
+    },
+    saveJSON(){
+      exportFile('progress.json', this.jsonData);
     }
   },
 };

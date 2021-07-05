@@ -1,84 +1,67 @@
 <template>
-  <div class="row">
-    <div v-show="unusedOptions.length > 0">
-      <select ref="selectComp" @change="updateData">
-        <option hidden value selected> -- change {{componentTitle}} -- </option>
-        <option v-for="option in unusedOptions" :key="option" :value="option">{{
-          option
-        }}</option>
-      </select>
-    </div>
-
-    <input
-      v-if="haveAmount"
-      type="number"
-      ref="amount"
-      value="1"
-      @input="updateAmount"
-      class="q-ml-sm"
-    />
-    <input v-if="haveInput" type="text" value="" @input="updateInput" 
-      class="q-ml-sm" />
+  <div class="row justify-between">
+    <options-component :allOptions="allOptions" @changeData="updateData"/>
+    <input-component v-if="componentData.input" :optionData="optionData" />
   </div>
 </template>
 
 <script>
+import OptionsComponent from "./OptionsComponent.vue";
+import InputComponent from "./InputComponent.vue";
+
 export default {
-  props: ["haveAmount", "haveInput", "allOptions"],
+  components: {
+    OptionsComponent,
+    InputComponent,
+  },
+  props: ["componentData"],
   inject: ["id", "componentTitle", "parentName"],
   computed: {
     unusedOptions() {
       return this.$store.getters.getComponentOptions(this.componentTitle);
     },
+    allOptions(){
+      return this.componentData.options;
+    },
+    optionData()
+    {
+      return  this.allOptions.find(
+        (option) => option.name == this.selectVal
+      );
+    }
   },
   data() {
     return {
       selectVal: "",
+      type: null,
+      inputVal: null,
     };
   },
+  created() {
+      this.selectVal = this.unusedOptions[0];
+    //console.log(this.componentData);
+    //this.setValueOnNewSelection();
+  },
   methods: {
-    updateAmount() {
-      const data = {
-        id: this.id,
-        parent: this.parentName,
-        count: this.$refs.amount.value,
-      };
-
-      this.$store.dispatch("updateComponentAmount", data);
-    },
-    updateInput(event) {
-      const data = {
-        id: this.id,
-        parent: this.parentName,
-        input: event.target.value,
-      };
-
-      this.$store.dispatch("updateComponentInput", data);
-    },
-    updateData() {
-      this.selectVal = this.$refs.selectComp.value;
-
-      const data = {
-        id: this.id,
-        value: this.selectVal,
-        parent: this.parentName,
-        usedOption: true,
-      };
+    updateData(data) {
+      this.selectVal = data.value;
 
       data.optionId = this.allOptions.find(
         (option) => option.name == this.selectVal
       ).optionId;
 
+      data.type = this.allOptions.find(
+        (option) => option.name == this.selectVal
+      ).type;
+
       this.$store.dispatch("updateComponentValue", data);
-      this.$refs.selectComp.value = null;
     },
   },
 };
 </script>
 
-
 <style scoped>
-input[type="number"]{
-  width:30px;
+input[type="number"] {
+  width: 50px;
 }
 </style>

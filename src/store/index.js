@@ -2,6 +2,7 @@ import { createStore } from "vuex";
 import { componentDatas } from "../data.js";
 
 import confirm from "./confirm";
+import output from "./output"
 
 //create random id for the component keys
 const uid = function() {
@@ -29,7 +30,8 @@ const getArrayTitles = function(arr = [], propName, filter = null) {
 
 export default createStore({
   modules: {
-    confirm
+    confirm,
+    output
   },
   state: {
     componentDatas: componentDatas,
@@ -46,7 +48,8 @@ export default createStore({
   mutations: {
     updateComponentValue(_, payload) {
       payload.component.value = payload.newValue;
-      if (payload.optionId) payload.component.optionId = payload.optionId;
+      if (payload.optionId >= 0) payload.component.optionId = payload.optionId;
+      if(payload.type) payload.component.type = payload.type;
     },
     updateComponentAmount(_, payload){
       payload.component.count = payload.count;
@@ -61,7 +64,8 @@ export default createStore({
         value: payload.value,
       };
 
-      if (payload.optionId) data.optionId = payload.optionId;
+      if (payload.optionId >= 0) data.optionId = payload.optionId;
+      if(payload.type) data.type = payload.type;
 
       if (payload.parent) {
         payload.parent.value.push(data);
@@ -98,8 +102,11 @@ export default createStore({
     deleteComponent(state, payload){
       state.componentsList = state.componentsList.filter(comp => comp != payload);
     },
-    deleteChildComponent(state,payload){
+    deleteChildComponent(_,payload){
       payload.parent.value = payload.parent.value.filter(comp => comp != payload.component);
+    },
+    deleteChildren(_, payload){
+      payload.value = [];
     }
   },
   actions: {
@@ -118,6 +125,7 @@ export default createStore({
           component: component,
           newValue: payload.value,
           optionId: payload.optionId,
+          type: payload.type
         };
 
         if (payload.count) updateData.count = payload.count;
@@ -160,13 +168,15 @@ export default createStore({
 
       let value = null;
       let optionId = null;
+      let type = null;
 
       if (component.type == "text") value = "";
       else if (component.type == "parent") value = [];
       else if (component.type == "boolean") value = false;
       else if (component.type == "select") {
         value = context.getters.getComponentOptions(component.title)[0];
-        optionId = component.options[0].optionId;
+        optionId = component.options.find(opt=>opt.name == value).optionId;
+        type = component.options.find(opt=>opt.name == value).type;
         context.commit("updateUsedOptions", {
           title: component.title,
           oldValue: null,
@@ -174,7 +184,7 @@ export default createStore({
         });
       }
 
-      context.commit("addComponent", { component, parent, value, optionId });
+      context.commit("addComponent", { component, parent, value, optionId, type });
 
       if (!component.multiple)
         context.commit("setComponentAsUsed", { title:payload.title });
@@ -212,31 +222,26 @@ export default createStore({
         });
         context.commit("deleteChildComponent", {component, parent});
       }
+    },
+    deleteChildren(context, payload){
+      const component = context.getters.getComponentById(payload);
+
+      if(Array.isArray(component.value) && component.value.length > 0)
+      {
+        context.commit("deleteUsedOptionTitle", {
+          title: component.value[0].title,
+        });
+      }
+
+      context.commit("deleteChildren", component);
     }
   },
   getters: {
-    getJSONdata(state) {
-      return state.componentsList.reduce((acc, val) => {
-        acc = acc || {};
-
-        if(Array.isArray(val["value"]))
-        {
-          acc[val["title"]] = [];
-          for(const item of val["value"]){
-            let obj = {...item};
-            delete obj.id;
-            acc[val["title"]].push(obj);
-          }
-        }
-        else{
-          acc[val["title"]] = val["value"];
-        }
-        
-        return acc;
-      }, {});
-    },
     getComponents(state) {
       return state.componentsList;
+    },
+    getComponentDatas(state) {
+      return state.componentDatas;
     },
     getComponentById: (state) => (payload) => {
       const id = payload.id;

@@ -14,6 +14,10 @@ export default {
             state.componentData = payload;
             state.confirm = true;
         },
+        askDeleteChilds(state, payload){
+            state.componentData = payload;
+            state.confirm = true;
+        },
         approveDelete(state){
             state.confirm = false;
         },
@@ -27,6 +31,9 @@ export default {
         },
         askDelete(context, payload){
             context.commit('askDelete', payload);
+        },
+        askDeleteChilds(context, payload){
+            context.commit('askDeleteChilds', payload);
         },
         approveDelete(context){
             context.dispatch("deleteComponent", context.getters.getComponentData, { root: true });
