@@ -2,7 +2,7 @@ import { createStore } from "vuex";
 import { componentDatas } from "../data.js";
 
 import confirm from "./confirm";
-import output from "./output"
+import output from "./output";
 
 //create random id for the component keys
 const uid = function() {
@@ -31,7 +31,7 @@ const getArrayTitles = function(arr = [], propName, filter = null) {
 export default createStore({
   modules: {
     confirm,
-    output
+    output,
   },
   state: {
     componentDatas: componentDatas,
@@ -49,12 +49,12 @@ export default createStore({
     updateComponentValue(_, payload) {
       payload.component.value = payload.newValue;
       if (payload.optionId >= 0) payload.component.optionId = payload.optionId;
-      if(payload.type) payload.component.type = payload.type;
+      if (payload.type) payload.component.type = payload.type;
     },
-    updateComponentAmount(_, payload){
+    updateComponentAmount(_, payload) {
       payload.component.count = payload.count;
     },
-    updateComponentInput(_, payload){
+    updateComponentInput(_, payload) {
       payload.component.input = payload.input;
     },
     addComponent(state, payload) {
@@ -65,10 +65,11 @@ export default createStore({
       };
 
       if (payload.optionId >= 0) data.optionId = payload.optionId;
-      if(payload.type) data.type = payload.type;
+      if (payload.type) data.type = payload.type;
 
       if (payload.parent) {
-        payload.parent.value.push(data);
+        if(!payload.parent.value.find(comp => comp.optionId == data.optionId))
+          payload.parent.value.push(data);
       } else {
         state.componentsList.push(data);
       }
@@ -78,8 +79,10 @@ export default createStore({
         state.usedComponents.push(payload.title);
       }
     },
-    setComponentAsUnused(state, payload){
-      state.usedComponents = state.usedComponents.filter(comp=> comp != payload.title);
+    setComponentAsUnused(state, payload) {
+      state.usedComponents = state.usedComponents.filter(
+        (comp) => comp != payload.title
+      );
     },
     unlockComponent(_, payload) {
       payload.component.locked = false;
@@ -90,24 +93,28 @@ export default createStore({
         state.usedOptions[payload.title] = arr;
       } else {
         const usedOptionsArray = state.usedOptions[payload.title];
-        if(payload.newValue != null) usedOptionsArray.push(payload.newValue);
+        if (payload.newValue != null) usedOptionsArray.push(payload.newValue);
         state.usedOptions[payload.title] = usedOptionsArray.filter(
           (title) => title != payload.oldValue
         );
       }
     },
-    deleteUsedOptionTitle(state, payload){
+    deleteUsedOptionTitle(state, payload) {
       state.usedOptions[payload.title] = null;
     },
-    deleteComponent(state, payload){
-      state.componentsList = state.componentsList.filter(comp => comp != payload);
+    deleteComponent(state, payload) {
+      state.componentsList = state.componentsList.filter(
+        (comp) => comp != payload
+      );
     },
-    deleteChildComponent(_,payload){
-      payload.parent.value = payload.parent.value.filter(comp => comp != payload.component);
+    deleteChildComponent(_, payload) {
+      payload.parent.value = payload.parent.value.filter(
+        (comp) => comp != payload.component
+      );
     },
-    deleteChildren(_, payload){
+    deleteChildren(_, payload) {
       payload.value = [];
-    }
+    },
   },
   actions: {
     updateComponentValue(context, payload) {
@@ -125,7 +132,7 @@ export default createStore({
           component: component,
           newValue: payload.value,
           optionId: payload.optionId,
-          type: payload.type
+          type: payload.type,
         };
 
         if (payload.count) updateData.count = payload.count;
@@ -133,30 +140,38 @@ export default createStore({
         context.commit("updateComponentValue", updateData);
       }
     },
-    updateComponentAmount(context, payload)
-    {
+    updateComponentAmount(context, payload) {
       const component = context.getters.getComponentById(payload);
 
       if (component != null) {
         let updateData = {
           component: component,
-          count: payload.count
+          count: payload.count,
         };
 
         context.commit("updateComponentAmount", updateData);
       }
     },
-    updateComponentInput(context, payload)
-    {
+    updateComponentInput(context, payload) {
       const component = context.getters.getComponentById(payload);
 
       if (component != null) {
         let updateData = {
           component: component,
-          input: payload.input
+          input: payload.input,
         };
 
         context.commit("updateComponentInput", updateData);
+      }
+    },
+    addMultipleSubComponent(context, payload) {
+      const range = payload.range.split("-");
+      const min = parseInt(range[0]);
+      const max = parseInt(range[1]);
+
+      for (let index = min; index <= max; index++) {
+        payload.optionId = index;
+        context.dispatch('addComponent', payload);
       }
     },
     addComponent(context, payload) {
@@ -174,9 +189,18 @@ export default createStore({
       else if (component.type == "parent") value = [];
       else if (component.type == "boolean") value = false;
       else if (component.type == "select") {
-        value = context.getters.getComponentOptions(component.title)[0];
-        optionId = component.options.find(opt=>opt.name == value).optionId;
-        type = component.options.find(opt=>opt.name == value).type;
+
+        if (payload.optionId) {
+          optionId = payload.optionId;
+          value = component.options.find((opt) => opt.optionId == optionId)
+            .name;
+        } else {
+          value = context.getters.getComponentOptions(component.title)[0];
+          optionId = component.options.find((opt) => opt.name == value)
+            .optionId;
+        }
+
+        type = component.options.find((opt) => opt.name == value).type;
         context.commit("updateUsedOptions", {
           title: component.title,
           oldValue: null,
@@ -184,10 +208,16 @@ export default createStore({
         });
       }
 
-      context.commit("addComponent", { component, parent, value, optionId, type });
+      context.commit("addComponent", {
+        component,
+        parent,
+        value,
+        optionId,
+        type,
+      });
 
       if (!component.multiple)
-        context.commit("setComponentAsUsed", { title:payload.title });
+        context.commit("setComponentAsUsed", { title: payload.title });
 
       const relatedComponents = context.getters.getRelatedComponents(
         payload.title
@@ -197,44 +227,40 @@ export default createStore({
         if (comp.locked) context.commit("unlockComponent", { component: comp });
       }
     },
-    deleteComponent(context, payload){
+    deleteComponent(context, payload) {
       const component = context.getters.getComponentById(payload);
 
-      if(payload.parent == null)
-      {
-        context.commit("setComponentAsUnused", { title:component.title });
-        
-        if(Array.isArray(component.value) && component.value.length > 0)
-        {
+      if (payload.parent == null) {
+        context.commit("setComponentAsUnused", { title: component.title });
+
+        if (Array.isArray(component.value) && component.value.length > 0) {
           context.commit("deleteUsedOptionTitle", {
             title: component.value[0].title,
           });
         }
 
         context.commit("deleteComponent", component);
-      }
-      else {
+      } else {
         const parent = context.getters.getComponentByTitle(payload.parent);
         context.commit("updateUsedOptions", {
           title: component.title,
           oldValue: component.value,
           newValue: null,
         });
-        context.commit("deleteChildComponent", {component, parent});
+        context.commit("deleteChildComponent", { component, parent });
       }
     },
-    deleteChildren(context, payload){
+    deleteChildren(context, payload) {
       const component = context.getters.getComponentById(payload);
 
-      if(Array.isArray(component.value) && component.value.length > 0)
-      {
+      if (Array.isArray(component.value) && component.value.length > 0) {
         context.commit("deleteUsedOptionTitle", {
           title: component.value[0].title,
         });
       }
 
       context.commit("deleteChildren", component);
-    }
+    },
   },
   getters: {
     getComponents(state) {
@@ -256,8 +282,10 @@ export default createStore({
         return parent.find((comp) => comp.id == id);
       }
     },
-    getParentComponent: (state) => (title) =>  {
-      const parentTitle = state.componentDatas.find((comp) => comp.title == title).parent;
+    getParentComponent: (state) => (title) => {
+      const parentTitle = state.componentDatas.find(
+        (comp) => comp.title == title
+      ).parent;
       return state.componentsList.find((comp) => comp.title == parentTitle);
     },
     getComponentByTitle: (state) => (title) => {
@@ -292,8 +320,14 @@ export default createStore({
       if (usedOptions == null) return allOptions;
       return allOptions.filter((option) => !usedOptions.includes(option));
     },
+    getComponentMultipleOptions: (state) => (title) => {
+      const component = state.componentDatas.find(
+        (comp) => comp.title == title
+      );
+      return component.multipleOptions;
+    },
     getRelatedComponents: (state) => (title) => {
       return state.componentDatas.filter((comp) => comp.parent == title);
-    }
+    },
   },
 });

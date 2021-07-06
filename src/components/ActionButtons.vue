@@ -1,6 +1,10 @@
 <template>
-  <base-modal ref="deleteComponentConfirmation">Delete {{componentTitle}}?</base-modal>
-  <base-modal ref="deleteChildConfirmation">Delete {{componentTitle}} children?</base-modal>
+  <base-modal ref="deleteComponentConfirmation"
+    >Delete {{ componentTitle }}?</base-modal
+  >
+  <base-modal ref="deleteChildConfirmation"
+    >Delete {{ componentTitle }} children?</base-modal
+  >
 
   <div class="text-grey-8 q-gutter-xs">
     <q-btn
@@ -15,6 +19,13 @@
     >
       <q-tooltip> Add {{ componentData.add }} </q-tooltip>
     </q-btn>
+
+    <add-multiple-options
+      v-if="componentData.add != null && childHasMultipleOptions"
+      :options="childMultipleOptions"
+      :subItemTitle="componentData.add"
+    />
+
     <q-btn
       v-if="hasChild && showChilds"
       class="gt-xs"
@@ -90,10 +101,12 @@
 
 <script>
 import BaseModal from "./BaseModal.vue";
+import AddMultipleOptions from "./AddMultipleOptions.vue";
 
 export default {
   components: {
     BaseModal,
+    AddMultipleOptions,
   },
   props: ["componentData", "showChilds", "hasChild"],
   inject: ["id", "parentName", "componentTitle"],
@@ -104,6 +117,15 @@ export default {
         this.$store.getters.getComponentOptions(this.componentData.add).length >
         0
       );
+    },
+    childMultipleOptions() {
+      return this.$store.getters.getComponentMultipleOptions(
+        this.componentData.add
+      );
+    },
+    childHasMultipleOptions() {
+      const multipleOptions = this.childMultipleOptions;
+      return multipleOptions && multipleOptions.length > 0;
     },
   },
   methods: {
